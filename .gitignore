@@ -1,5 +1,6 @@
 # Secret files — never commit these
 credentials.json
+drive_token.json
 secrets.json
 recipients.txt
 bot_config.json

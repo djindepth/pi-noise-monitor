@@ -8,6 +8,8 @@ import subprocess
 import RPi.GPIO as GPIO
 import gspread
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import signal
@@ -35,6 +37,7 @@ CALIBRATION_OFFSET = 43.3         # dB offset calibrated against a reference met
 MP3_BITRATE = "96k"
 DRIVE_FOLDER_NAME = "NoiseDetector Clips"
 CREDENTIALS_FILE = "/home/pi/noisedetector/credentials.json"   # service account key
+DRIVE_TOKEN_FILE = "/home/pi/noisedetector/drive_token.json"   # user OAuth token for Drive
 SCOPES = [
     "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/spreadsheets",
@@ -89,6 +92,29 @@ def get_credentials():
         CREDENTIALS_FILE, scopes=SCOPES
     )
 
+def get_drive_credentials():
+    """Load user OAuth credentials for Drive. Auto-refreshes when expired.
+
+    Drive requires user OAuth because service accounts have no storage quota.
+    Generate drive_token.json by running setup/generate_drive_token.py once.
+    """
+    with open(DRIVE_TOKEN_FILE) as f:
+        data = json.load(f)
+    creds = Credentials(
+        token=data.get("token"),
+        refresh_token=data.get("refresh_token"),
+        token_uri=data.get("token_uri"),
+        client_id=data.get("client_id"),
+        client_secret=data.get("client_secret"),
+        scopes=data.get("scopes"),
+    )
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        data["token"] = creds.token
+        with open(DRIVE_TOKEN_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    return creds
+
 def convert_to_mp3(wav_path):
     mp3_path = os.path.splitext(wav_path)[0] + ".mp3"
     try:
@@ -129,7 +155,7 @@ def get_drive_folder_id(service):
 
 def upload_to_drive(filepath, filename):
     try:
-        creds   = get_credentials()
+        creds   = get_drive_credentials()
         service = build("drive", "v3", credentials=creds)
         folder_id = get_drive_folder_id(service)
         uploaded = service.files().create(

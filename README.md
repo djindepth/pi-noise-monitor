@@ -79,6 +79,25 @@ Originally built to document noise ordinance violations, but adaptable to any en
 5. Create a Google Sheet and share it with the service account's email address (Editor access)
 6. Copy the Sheet ID from the URL: `https://docs.google.com/spreadsheets/d/SHEET_ID_HERE/edit`
 
+> **Why two credential files?** Service accounts have zero Google Drive storage quota — they cannot own files. Drive uploads use your personal Google account via OAuth (`drive_token.json`). Google Sheets logging uses the service account (`credentials.json`), which never expires and requires no browser auth.
+
+### Google Drive OAuth Token
+
+Drive uploads require a one-time OAuth authorization on your Mac or PC:
+
+1. In the Google Cloud Console, go to **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID** (type: Desktop app)
+2. Go to **OAuth consent screen** and publish the app to **Production** (so the refresh token never expires)
+3. Fill in your `client_id` and `client_secret` in `setup/generate_drive_token.py`
+4. Run it on your Mac/PC (not the Pi): `python3 setup/generate_drive_token.py`
+5. A browser window opens — log in with the Google account that owns the Drive folder
+6. Copy the resulting token to the Pi:
+
+```bash
+scp drive_token.json pi@<PI_IP>:/home/pi/noisedetector/drive_token.json
+```
+
+The token auto-refreshes and never needs to be regenerated as long as the app stays in Production mode.
+
 ### Gmail App Password
 
 1. Enable 2-Factor Authentication on your Google account
@@ -128,6 +147,10 @@ nano /home/pi/noisedetector/secrets.json
 # Email recipients
 cp config/recipients.txt.example /home/pi/noisedetector/recipients.txt
 nano /home/pi/noisedetector/recipients.txt
+
+# Drive OAuth token — generate on your Mac/PC, then copy here
+# See "Google Drive OAuth Token" in Prerequisites above
+scp drive_token.json pi@<PI_IP>:/home/pi/noisedetector/drive_token.json
 ```
 
 ### 2. Edit the Python files
@@ -190,10 +213,12 @@ pi-noise-monitor/
 ├── bot.py                  # Telegram bot
 ├── config/
 │   ├── credentials.json.example   # Google service account key template
+│   ├── drive_token.json.example   # Drive OAuth token template
 │   ├── secrets.json.example       # Gmail app password template
 │   └── recipients.txt.example     # Email recipient list template
 ├── setup/
 │   ├── install.sh                 # One-command setup script
+│   ├── generate_drive_token.py    # Run once on Mac/PC to generate drive_token.json
 │   ├── noisedetector.service      # systemd unit for monitor
 │   ├── noisebot.service           # systemd unit for Telegram bot
 │   └── crontab.example            # Daily digest cron entry
@@ -202,6 +227,7 @@ pi-noise-monitor/
 
 Runtime files (not in repo):
 - `/home/pi/noisedetector/credentials.json` — service account key (never commit)
+- `/home/pi/noisedetector/drive_token.json` — Drive OAuth token (never commit)
 - `/home/pi/noisedetector/secrets.json` — Gmail app password (never commit)
 - `/home/pi/noisedetector/recipients.txt` — email list (never commit)
 - `/home/pi/noisedetector/bot_config.json` — stores authorized Telegram chat ID
