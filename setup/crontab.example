@@ -1,0 +1,4 @@
+# Add this to the pi user's crontab with: crontab -e
+#
+# Send the daily noise digest at 7:00 AM every day
+0 7 * * * /usr/bin/python3 /home/pi/noisedetector/digest.py >> /home/pi/noise_logs/digest.log 2>&1

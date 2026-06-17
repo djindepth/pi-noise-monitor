@@ -1,0 +1,4 @@
+# Email recipients for the daily noise digest
+# One address per line. Lines starting with # are ignored.
+recipient1@example.com
+recipient2@example.com

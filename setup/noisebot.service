@@ -1,0 +1,14 @@
+[Unit]
+Description=NoiseDetector Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/noisedetector/bot.py
+WorkingDirectory=/home/pi/noisedetector
+Restart=on-failure
+RestartSec=10
+User=pi
+
+[Install]
+WantedBy=multi-user.target

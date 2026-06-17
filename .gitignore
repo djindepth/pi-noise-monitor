@@ -1,0 +1,17 @@
+# Secret files — never commit these
+credentials.json
+secrets.json
+recipients.txt
+bot_config.json
+
+# Runtime data
+noise_logs/
+*.mp3
+*.wav
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
